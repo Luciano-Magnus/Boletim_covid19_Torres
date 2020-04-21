@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Boletim_Covid19</string>
+    <string name="descart">Descartados:</string>
+    <string name="confir">Confirmados:</string>
+    <string name="data">Data:</string>
+    <string name="boletim">Boletim Epidemiológico\nCORONAVÍRUS</string>
+    <string name="casos_confirmados">CASOS\nCONFIRMADOS</string>
+    <string name="casos_descartados">CASOS\nDESCARTADOS</string>
+    <string name="casos_suspeitos">CASOS\nSUSPEITOS</string>
+    <string name="casos_curados">CURADOS</string>
+    <string name="casos_monitorados">CASOS EM\nMONITORAMENTO</string>
+    <string name="hora">HORA</string>
+    <string name="iso_domiciliar">em isolamento domiciliar</string>
+    <string name="iso_hospitalar">em isolamento hospitalar</string>
+    <string name="mortes">MORTES</string>
+    <string name="prefeitura">PREFEITURA DE</string>
+    <string name="torres">TORRES</string>
+    <string name="logo_prefeitura">Logo da prefeitura de Torres</string>
+</resources>
