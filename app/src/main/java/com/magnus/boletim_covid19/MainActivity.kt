@@ -1,96 +1,120 @@
 package com.magnus.boletim_covid19
-
-import android.content.Context
-import android.os.Build
+import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import androidx.annotation.RequiresApi
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_main.*
-import org.json.JSONArray
-import java.io.IOException
-import java.io.InputStream
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import android.view.MenuInflater as MenuInflater
+
 
 class MainActivity : AppCompatActivity() {
 
-    var lista = arrayListOf<Boletim>()
-    var adapter = Adapter(lista)
+    private  var  asyncTask : BoletimTask? =null
+    private var boletinsList = mutableListOf<Boletim>()
+    private var adapter = Adapter(boletinsList)
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val actionbar = supportActionBar
-        //set actionbar title
-        actionbar!!.title = "Covid-19 Torres-RS"
-        readJson(this)
+        //setSupportActionBar(findViewById(R.id.my_tool))
+        carregaDados()
         initRecyclerView()
-
     }
 
-    private fun initRecyclerView() {
-        rvDados.adapter = adapter
-        val layoutManager = LinearLayoutManager(this)
-        // val layoutManager= GridLayoutManager(this,2)
-        rvDados.layoutManager = layoutManager
-    }
 
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressed()
-        return true
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun readJson(context: Context) {
-        var json: String? = null
-        val listaBoletins = mutableListOf<Boletim>()
-        try {
-            val inputStream: InputStream = context.assets.open("data.json")
-            json = inputStream.bufferedReader().use { it.readText() }
-            // txtValue.text=json.toString()
-            var jsonArray = JSONArray(json)
-            for (i in 0..jsonArray.length() - 1) {
-                var js = jsonArray.getJSONObject(i)
-                var confirmados = js.getString("Confirmados")
-                var curados = js.getString("Curados")
-                var descartados = js.getString("Descartados")
-                var suspeitos = js.getString("Suspeitos")
-                var monitoramento = js.getString("Monitoramento")
-                var sDomiciliar = js.getString("Sdomiciliar")
-                var sHospitalar = js.getString("Shopitalar")
-                var mortes = js.getString("mortes")
-                var hora = js.getString("boletim")
-                val dia = formatarData(js.getString("boletim").substring(0, 10))
-                var boletim = Boletim(
-                    suspeitos.toInt(),
-                    confirmados.toInt(),
-                    descartados.toInt(),
-                    monitoramento.toInt(),
-                    curados.toInt(),
-                    sDomiciliar.toInt(),
-                    sHospitalar.toInt(),
-                    mortes.toInt(),
-                    dia,
-                    hora
-                )
-                lista.add(boletim)
+    fun carregaDados(){
+        if (boletinsList.isNotEmpty()){
+            showProgress(false)
+        }else{
+            if(asyncTask==null){
+                if (BoletimHttp.hasConnection(this)){
+                    starDonwload()
+                }else{
+                    progressBar.visibility =View.GONE
+                    txtMsg.text = "Erro"
+                }
+            }else if(asyncTask?.status == AsyncTask.Status.RUNNING){
+                showProgress(true)
             }
-        } catch (e: IOException) {
-            Log.e("Erro", "Impossivel ler JSON")
+        }
+    }
+    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        R.id.menu_refresh -> {
+
+            Toast.makeText(this,"Carregando...",Toast.LENGTH_LONG).show()
+            carregaDados()
+
+            true
         }
 
+
+        else -> {
+
+            super.onOptionsItemSelected(item)
+        }
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun formatarData(data: String): String {
-        val diaString = data
-        var formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-        var date = LocalDate.parse(diaString)
-        var formattedDate = date.format(formatter)
-        return formattedDate
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu,menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    private fun initRecyclerView(){
+        rvDados.adapter=adapter
+        // val layoutManager = GridLayoutManager(this,1)
+        val layoutManager = LinearLayoutManager(this)
+        rvDados.layoutManager=layoutManager
+    }
+
+
+    private fun starDonwload(){
+        if (asyncTask?.status!=AsyncTask.Status.RUNNING){
+            asyncTask =BoletimTask()
+            asyncTask?.execute()
+        }
+    }
+    private fun updateBoletns(result: List<Boletim>?){
+        if (result!=null){
+            boletinsList.clear()
+            boletinsList.addAll(result.reversed())
+        }else{
+            txtMsg.text = "Erro ao Carregar"
+        }
+        adapter.notifyDataSetChanged()
+        asyncTask=null
+    }
+
+    fun showProgress(show: Boolean){
+        if(show){
+            txtMsg.text= "Carregando...."
+        }
+        txtMsg.visibility =if (show) View.VISIBLE else View.GONE
+        progressBar.visibility =if (show) View.VISIBLE else View.GONE
+    }
+
+    inner class BoletimTask: AsyncTask<Void, Void, List<Boletim>?>() {
+        override fun onPreExecute() {
+            super.onPreExecute()
+            showProgress(true)
+
+        }
+
+        override fun doInBackground(vararg p0: Void?): List<Boletim>? {
+            return BoletimHttp.loadBoletim()
+
+        }
+
+        override fun onPostExecute(bo: List<Boletim>?) {
+            super.onPostExecute(bo)
+            showProgress(false)
+            updateBoletns(bo)
+
+        }
+
     }
 
 }

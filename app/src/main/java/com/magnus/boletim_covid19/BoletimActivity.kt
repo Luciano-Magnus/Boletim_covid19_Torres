@@ -19,7 +19,7 @@ class BoletimActivity : AppCompatActivity() {
 
         val confirmados = intent.getStringExtra("Confirmados")
         val data = intent.getStringExtra("Data")
-        val hora = formatarHora(intent.getStringExtra("Hora").substring(11, 16))
+        val hora = formatarHora(intent.getStringExtra("Hora"))
         val descartados = intent.getStringExtra("Descartados")
         val suspeitos = intent.getStringExtra("Suspeitos")
         val curados = intent.getStringExtra("Curados")
